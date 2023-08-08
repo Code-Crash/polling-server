@@ -8,8 +8,27 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 const clients = {}; // To store client subscriptions 
 const PORT = process.env.PORT || 3001;
+const DELAY = process.env.DELAY || 5000;
 
 app.use(cors());
+
+const onEventResponse = (clientId, body, subscriptions = ['*']) => {
+    setTimeout(() => {
+        if (clients[clientId]) {
+            console.log(`Notifying client ${clientId}...`);
+            clients[clientId].forEach((client) => {
+                console.log(`Sending payload to client: ${clientId}`);
+                let payload = {
+                    status: 'success',
+                    message: `You got notification.`,
+                    payload: body || {},
+                    subscriptions: subscriptions,
+                }
+                client.write(`data: ${JSON.stringify(payload)}\n\n`);
+            });
+        }
+    }, DELAY);
+};
 
 // NOTE: We can also add request id, but that would cause to create multiple pulling on client and server side. 
 app.get('/subscribe/:clientId', (req, res) => {
@@ -48,20 +67,14 @@ app.get('/subscribe/:clientId', (req, res) => {
 app.post('/notify/:clientId', (req, res) => {
     const clientId = req.params.clientId;
     const body = req.body;
-    console.log('Body:', body);
-    if (clients[clientId]) {
-        console.log(`Notifying client ${clientId}...`);
-        clients[clientId].forEach((client) => {
-            console.log(`Sending payload to client: ${clientId}`);
-            let payload = {
-                status: 'success',
-                message: `You got notification.`,
-                payload: body || {},
-            }
-            client.write(`data: ${JSON.stringify(payload)}\n\n`);
-        });
+    let subscriptions = ['*'];
+    // Check if component subscriptions is provided from client
+    if (body && body.subscriptions && body.subscriptions.length) {
+        subscriptions = [...body.subscriptions];
+        delete body.subscriptions;
     }
-
+    console.log('Body:', body);
+    onEventResponse(clientId, body || {}, subscriptions);
     res.status(202).send({ status: 'success', payload: 'Notification Received on Server.' });
 });
 
