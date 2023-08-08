@@ -1,16 +1,15 @@
+require('dotenv').config();
 const express = require('express');
-// const http = require('http');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-// const server = http.createServer(app);
 const clients = {}; // To store client subscriptions 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
-app.use(cors({ origin: 'http://localhost:3000', credentials: true })); // Allow only 'http://localhost:3000' with credentials
+app.use(cors());
 
 // NOTE: We can also add request id, but that would cause to create multiple pulling on client and server side. 
 app.get('/subscribe/:clientId', (req, res) => {
