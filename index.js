@@ -66,13 +66,13 @@ app.get('/subscribe/:clientId', (req, res) => {
 
 app.post('/notify/:clientId', (req, res) => {
     const clientId = req.params.clientId;
-    const body = req.body;
+    const body = req.body || {};
     let subscriptions = ['*'];
     // Check if component subscriptions is provided from client
     if (body && body.subscriptions && body.subscriptions.length) {
         subscriptions = [...body.subscriptions];
-        delete body.subscriptions;
     }
+    delete body.subscriptions; // delete subscriptions from body and rest of things will be used as payload
     console.log('Body:', body);
     onEventResponse(clientId, body || {}, subscriptions);
     res.status(202).send({ status: 'success', payload: 'Notification Received on Server.' });
