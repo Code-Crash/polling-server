@@ -1,3 +1,3 @@
-# Polling Server
+# Server-Sent Events (SSE) Server
 
-This is example code for using polling in node.js
+This is example code for using SSE in node.js
