@@ -12,6 +12,12 @@ const DELAY = process.env.DELAY || 5000;
 
 app.use(cors());
 
+/**
+ * Sends event responses to subscribed clients after a delay.
+ * @param {string} clientId - The client identifier.
+ * @param {object} body - The event payload.
+ * @param {string[]} subscriptions - The list of subscriptions.
+ */
 const onEventResponse = (clientId, body, subscriptions = ['*']) => {
     setTimeout(() => {
         if (clients[clientId]) {
@@ -30,9 +36,12 @@ const onEventResponse = (clientId, body, subscriptions = ['*']) => {
     }, DELAY);
 };
 
-// NOTE: We can also add request id, but that would cause to create multiple pulling on client and server side. 
+/**
+ * Handles client subscription to server-sent events (SSE).
+ * @param {Request} req - The HTTP request object.
+ * @param {Response} res - The HTTP response object.
+ */
 app.get('/subscribe/:clientId', (req, res) => {
-
     const clientId = req.params.clientId;
 
     if (!clients[clientId]) {
@@ -64,20 +73,47 @@ app.get('/subscribe/:clientId', (req, res) => {
     });
 });
 
+/**
+ * Handles sending notifications to subscribed clients.
+ * @param {Request} req - The HTTP request object.
+ * @param {Response} res - The HTTP response object.
+ */
 app.post('/notify/:clientId', (req, res) => {
     const clientId = req.params.clientId;
     const body = req.body || {};
     let subscriptions = ['*'];
-    // Check if component subscriptions is provided from client
+    // Check if component subscriptions are provided from the client
     if (body && body.subscriptions && body.subscriptions.length) {
         subscriptions = [...body.subscriptions];
     }
-    delete body.subscriptions; // delete subscriptions from body and rest of things will be used as payload
+    delete body.subscriptions; // delete subscriptions from body, rest of the data will be used as payload
     console.log('Body:', body);
     onEventResponse(clientId, body || {}, subscriptions);
     res.status(202).send({ status: 'success', payload: 'Notification Received on Server.' });
 });
 
+/**
+ * Handles webhook notifications from external systems.
+ * @param {Request} req - The HTTP request object.
+ * @param {Response} res - The HTTP response object.
+ */
+app.post('/webhook/:clientId', (req, res) => {
+    const clientId = req.params.clientId;
+    const body = req.body || {};
+    let subscriptions = ['*'];
+    // Check if component subscriptions are provided from the client
+    if (body && body.subscriptions && body.subscriptions.length) {
+        subscriptions = [...body.subscriptions];
+    }
+    delete body.subscriptions; // delete subscriptions from body, rest of the data will be used as payload
+    console.log('Body:', body);
+    onEventResponse(clientId, body || {}, subscriptions);
+    res.status(202).send({ status: 'success', payload: 'Webhook Received on Server.' });
+});
+
+/**
+ * Starts the Express server.
+ */
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}.`);
 });
