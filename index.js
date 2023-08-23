@@ -1,8 +1,10 @@
 require('dotenv').config();
+const logger = require('code-logger');
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 
+// logger.doStart();
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -108,6 +110,25 @@ app.post('/webhook/:clientId', (req, res) => {
     delete body.subscriptions; // delete subscriptions from body, rest of the data will be used as payload
     console.log('Body:', body);
     onEventResponse(clientId, body || {}, subscriptions);
+    res.status(202).send({ status: 'success', payload: 'Webhook Received on Server.' });
+});
+
+/**
+ * Handles webhook notifications from external systems.
+ * @param {Request} req - The HTTP request object.
+ * @param {Response} res - The HTTP response object.
+ */
+app.post('/logs/:clientId', (req, res) => {
+    const clientId = req.params.clientId;
+    const body = req.body || {};
+    let subscriptions = ['*'];
+    // Check if component subscriptions are provided from the client
+    if (body && body.subscriptions && body.subscriptions.length) {
+        subscriptions = [...body.subscriptions];
+    }
+    delete body.subscriptions; // delete subscriptions from body, rest of the data will be used as payload
+    console.log('Body:', body);
+    // onEventResponse(clientId, body || {}, subscriptions);
     res.status(202).send({ status: 'success', payload: 'Webhook Received on Server.' });
 });
 
